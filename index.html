@@ -1025,12 +1025,78 @@ function showAlphaScreen(from){
   document.getElementById('alpha-screen').classList.remove('hidden');
 }
 function buildAlphaGrid(){
-  const grid=document.getElementById('alphabet-grid');grid.innerHTML='';
+  const grid=document.getElementById('alphabet-grid');
+  grid.innerHTML='';
+  const screen=document.getElementById('alpha-screen');
+
+  // 상단 빠른 이동 바
+  const nav=document.createElement('div');
+  nav.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px;justify-content:center;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:1;';
   for(let i=0;i<26;i++){
     const ch=String.fromCharCode(65+i);
-    const cell=document.createElement('div');
-    cell.className='alpha-cell'+(collected.has(ch)?' collected':'');
-    cell.textContent=ch;grid.appendChild(cell);
+    const btn=document.createElement('button');
+    btn.textContent=ch;
+    const done=collected.has(ch);
+    btn.style.cssText=`width:32px;height:32px;border-radius:8px;border:none;font-weight:900;font-size:13px;cursor:pointer;flex-shrink:0;background:${done?'var(--yellow)':'var(--gl)'};color:${done?'var(--td)':'#999'};`;
+    btn.addEventListener('click',()=>{
+      const sec=document.getElementById('alpha-sec-'+ch);
+      if(sec)screen.scrollTop=sec.offsetTop-48;
+    });
+    nav.appendChild(btn);
+  }
+  grid.appendChild(nav);
+
+  // 글자별 섹션
+  for(let i=0;i<26;i++){
+    const ch=String.fromCharCode(65+i);
+    const done=collected.has(ch);
+    const sec=document.createElement('div');
+    sec.id='alpha-sec-'+ch;
+    sec.style.cssText='margin-bottom:22px;';
+
+    // 글자 헤더
+    const hdr=document.createElement('div');
+    hdr.style.cssText=`display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;background:${done?'var(--yellow)':'var(--gl)'};margin-bottom:8px;`;
+    hdr.innerHTML=`<span style="font-size:2rem;font-weight:900;color:var(--td);line-height:1;">${ch}</span>${done?'<span style="font-size:1rem;">⭐</span>':''}`;
+    sec.appendChild(hdr);
+
+    // Lv2 단어
+    const lv2w=LV2_LETTER_WORDS[ch];
+    if(lv2w){
+      const tag=document.createElement('div');
+      tag.style.cssText='font-size:11px;color:#888;margin-bottom:4px;padding-left:2px;font-weight:700;';
+      tag.textContent='Lv2 · 단어';
+      sec.appendChild(tag);
+      const row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px;';
+      lv2w.forEach(w=>{
+        const c=document.createElement('div');
+        c.style.cssText='background:#fff;border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);';
+        c.innerHTML=`<span style="font-size:1.6rem;line-height:1;">${w.emoji}</span><div style="min-width:0;"><div style="font-size:0.85rem;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${w.word}</div><div style="font-size:0.72rem;color:#888;">${w.mean} · ${w.kr}</div></div>`;
+        row.appendChild(c);
+      });
+      sec.appendChild(row);
+    }
+
+    // Lv3 단어 (해당 글자로 시작하는 단어)
+    const lv3w=BLANK_ALL.filter(b=>b.word[0].toUpperCase()===ch);
+    if(lv3w.length){
+      const tag=document.createElement('div');
+      tag.style.cssText='font-size:11px;color:#888;margin-bottom:4px;padding-left:2px;font-weight:700;';
+      tag.textContent='Lv3 · 단모음';
+      sec.appendChild(tag);
+      const row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px;';
+      lv3w.forEach(b=>{
+        const c=document.createElement('div');
+        c.style.cssText='background:#fff;border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:3px solid var(--gm);';
+        c.innerHTML=`<span style="font-size:1.6rem;line-height:1;">${b.img}</span><div style="min-width:0;"><div style="font-size:0.85rem;font-weight:700;color:var(--td);">${b.word}</div><div style="font-size:0.72rem;color:#888;">${b.kr}</div></div>`;
+        row.appendChild(c);
+      });
+      sec.appendChild(row);
+    }
+
+    grid.appendChild(sec);
   }
 }
 
