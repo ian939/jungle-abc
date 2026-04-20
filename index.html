@@ -1155,8 +1155,8 @@ function lv2ShowWellDone(){
     skipBtn.classList.add('hidden');
   }else{
     document.getElementById('lv2-modal-emoji').textContent='🧠';
-    document.getElementById('lv2-modal-text').textContent='5개 단어 완성!\n메모리 게임을 해볼까요?';
-    btn.textContent='메모리 게임 시작!';
+    document.getElementById('lv2-modal-text').innerHTML='5개 단어 완성! 🎉<br><span style="font-size:1.4rem;color:#ff9800;font-weight:900;">⭐ +10개</span> 받을 수 있어요!';
+    btn.textContent='메모리 게임 시작! 🧠';
     btn.onclick=()=>{document.getElementById('lv2-modal').classList.add('hidden');skipBtn.classList.add('hidden');startMemoryGame();};
     skipBtn.classList.remove('hidden');
   }
