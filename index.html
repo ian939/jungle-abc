@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<!-- jungle-abc | 2026-04-20 | spec: ../spec.md -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Jungle ABC 🌿</title>
+<style>
+/* .hidden은 최고 우선순위로 먼저 선언 */
+.hidden{display:none!important;}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--gd:#2d6a2d;--gm:#4caf50;--gl:#a5d6a7;--yellow:#ffeb3b;--orange:#ff9800;--red:#ef5350;--white:#fff;--bg:#e8f5e9;--td:#1b5e20;--shadow:0 4px 12px rgba(0,0,0,0.15);}
+html,body{width:100%;height:100%;font-family:"Apple SD Gothic Neo","Noto Sans KR",-apple-system,sans-serif;background:var(--bg);overflow:hidden;user-select:none;}
+
+/* ── GAME ── */
+#app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;max-width:600px;margin:0 auto;padding:env(safe-area-inset-top,10px) 16px env(safe-area-inset-bottom,10px);}
+#topbar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:6px 0 4px;flex-shrink:0;gap:6px;}
+#level-badge{background:var(--gd);color:#fff;border-radius:20px;padding:6px 14px;font-size:14px;font-weight:700;}
+#star-count{font-size:17px;font-weight:700;color:var(--td);display:flex;align-items:center;gap:3px;flex:1;justify-content:center;}
+.icon-btn{width:46px;height:46px;border-radius:50%;border:none;background:var(--gl);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);flex-shrink:0;}
+.icon-btn:active{transform:scale(0.92);}
+#progress-wrap{width:100%;height:10px;background:var(--gl);border-radius:10px;margin:4px 0;overflow:hidden;flex-shrink:0;}
+#progress-bar{height:100%;background:var(--gm);border-radius:10px;transition:width 0.4s ease;}
+#character-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:4px 0;}
+#char-wrap{display:flex;flex-direction:column;align-items:center;}
+#char-base{font-size:clamp(50px,12vw,80px);display:block;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.2));}
+#char-items{font-size:clamp(16px,4vw,26px);min-height:1.2em;text-align:center;}
+#char-wrap.dance{animation:dance 0.5s ease;}
+@keyframes dance{0%{transform:rotate(0)scale(1)}20%{transform:rotate(-15deg)scale(1.2)}40%{transform:rotate(15deg)scale(1.2)}60%{transform:rotate(-10deg)scale(1.1)}80%{transform:rotate(10deg)scale(1.1)}100%{transform:rotate(0)scale(1)}}
+#question-area{flex-shrink:0;width:100%;background:#fff;border-radius:20px;padding:12px 16px;box-shadow:var(--shadow);text-align:center;margin:4px 0;}
+#question-label{font-size:13px;color:#666;margin-bottom:4px;}
+#question-main{font-size:clamp(26px,8vw,48px);font-weight:900;color:var(--td);letter-spacing:4px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;}
+#question-main .blank{display:inline-block;width:clamp(28px,8vw,48px);height:clamp(28px,8vw,48px);border-bottom:5px solid var(--gd);vertical-align:bottom;}
+#kr-hint{font-size:17px;color:#555;min-height:22px;margin-top:3px;}
+#btn-hint{margin-top:7px;padding:7px 18px;border:none;border-radius:20px;background:var(--gl);color:var(--td);font-size:13px;font-weight:700;cursor:pointer;}
+#btn-hint:active{transform:scale(0.95);}
+#feedback{font-size:15px;font-weight:700;min-height:22px;text-align:center;margin:3px 0;flex-shrink:0;}
+#feedback.correct{color:var(--gd);}#feedback.wrong{color:var(--red);}
+#cards-area{width:100%;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;flex:1;align-content:center;}
+.card{background:#fff;border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;min-height:74px;cursor:pointer;border:3px solid transparent;transition:transform 0.1s,border-color 0.2s;}
+.card:active{transform:scale(0.93);}
+.card .letter{font-size:clamp(24px,7vw,42px);font-weight:900;color:var(--td);line-height:1;}
+.card .phonics{font-size:12px;color:#888;margin-top:2px;}
+.card.correct-card{border-color:var(--gm);background:#f1f8f1;animation:pop 0.35s ease;}
+.card.wrong-card{animation:shake 0.4s ease;border-color:var(--red);}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+
+/* ── OVERLAYS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;}
+.modal{background:#fff;border-radius:28px;padding:26px 22px;text-align:center;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.25);}
+.modal h2{font-size:23px;color:var(--td);margin-bottom:10px;}
+.modal p{font-size:14px;color:#555;margin-bottom:16px;}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;padding:13px 28px;background:var(--gm);color:#fff;border:none;border-radius:24px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);min-width:140px;min-height:58px;}
+.btn-primary:active{transform:scale(0.95);}
+.btn-secondary{display:inline-flex;align-items:center;justify-content:center;padding:11px 20px;background:var(--gl);color:var(--td);border:none;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;min-height:52px;}
+.btn-secondary:active{transform:scale(0.95);}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+
+/* ── START / HOME ── */
+#start-screen{position:fixed;inset:0;background:linear-gradient(160deg,#388e3c,#66bb6a,#a5d6a7);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:200;padding:24px 20px env(safe-area-inset-bottom,20px);overflow-y:auto;}
+#start-screen h1{font-size:clamp(30px,8vw,52px);color:#fff;font-weight:900;text-shadow:0 3px 10px rgba(0,0,0,0.25);margin-bottom:4px;}
+#start-screen .sub{font-size:15px;color:#e8f5e9;margin-bottom:18px;}
+#start-screen .chars{font-size:48px;margin-bottom:14px;}
+.level-cards{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.level-card{background:rgba(255,255,255,0.92);border-radius:20px;padding:16px 20px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.15);border:3px solid transparent;transition:transform 0.1s,border-color 0.15s;}
+.level-card:active{transform:scale(0.97);}
+.level-card.selected{border-color:#fff;}
+.lc-icon{font-size:38px;flex-shrink:0;}
+.lc-body{text-align:left;flex:1;}
+.lc-title{font-size:17px;font-weight:900;color:var(--td);}
+.lc-desc{font-size:13px;color:#555;margin-top:2px;}
+.lc-badge{font-size:12px;font-weight:700;color:#fff;background:var(--gm);border-radius:10px;padding:3px 10px;white-space:nowrap;}
+
+/* ── FULL SCREENS ── */
+.full-screen{position:fixed;inset:0;background:var(--bg);overflow-y:auto;z-index:200;padding:16px 16px env(safe-area-inset-bottom,16px);}
+.screen-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.screen-header h2{font-size:20px;color:var(--td);font-weight:900;flex:1;text-align:center;}
+.back-btn{width:44px;height:44px;border-radius:50%;border:none;background:var(--gl);font-size:20px;cursor:pointer;flex-shrink:0;}
+.back-btn:active{transform:scale(0.92);}
+
+/* ── ALPHA COLLECTION ── */
+#alphabet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin-bottom:20px;}
+.alpha-cell{width:100%;aspect-ratio:1;border-radius:12px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;color:#aaa;position:relative;}
+.alpha-cell.collected{background:var(--yellow);color:var(--td);box-shadow:0 0 8px rgba(255,235,59,0.6);}
+.alpha-cell.collected::after{content:"⭐";position:absolute;top:-5px;right:-5px;font-size:11px;}
+
+/* ── TREE ── */
+#tree-screen{position:fixed;inset:0;background:linear-gradient(180deg,#1a3a1a 0%,#2d5a2d 40%,#4a8a4a 100%);overflow-y:auto;z-index:200;display:flex;flex-direction:column;align-items:center;padding:14px 16px env(safe-area-inset-bottom,16px);}
+#tree-header{width:100%;max-width:500px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+#tree-header .back-btn{background:rgba(255,255,255,0.2);color:#fff;}
+#tree-header h2{color:#fff;font-size:19px;font-weight:900;}
+#shard-count{color:#fff;font-size:15px;font-weight:700;background:rgba(255,255,255,0.15);padding:5px 12px;border-radius:16px;}
+#tree-wrap{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;margin:6px 0;}
+#tree-emoji{font-size:clamp(72px,20vw,130px);line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.4));}
+#fruits-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px;min-height:64px;align-items:center;}
+.fruit{font-size:48px;cursor:pointer;animation:fruitAppear 0.5s cubic-bezier(.175,.885,.32,1.275);filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3));display:inline-block;}
+.fruit.shaking{animation:fruitShake 0.65s ease forwards;pointer-events:none;}
+@keyframes fruitAppear{0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes fruitShake{0%{transform:scale(1) rotate(0)}15%{transform:scale(1.15) rotate(-13deg)}30%{transform:scale(1.15) rotate(13deg)}45%{transform:scale(1.1) rotate(-8deg)}60%{transform:scale(1.1) rotate(8deg)}75%{transform:scale(1.05) rotate(-4deg)}90%{transform:scale(1.3) rotate(0);filter:drop-shadow(0 0 18px gold);}100%{transform:scale(0);opacity:0;}}
+#tree-info{color:#c8e6c9;font-size:14px;margin-top:6px;text-align:center;}
+#tree-stars-bar{width:100%;max-width:400px;background:rgba(255,255,255,0.15);border-radius:12px;overflow:hidden;height:16px;margin-top:6px;}
+#tree-stars-fill{height:100%;background:linear-gradient(90deg,#ffeb3b,#ff9800);border-radius:12px;transition:width 0.5s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;font-size:10px;font-weight:700;color:#333;}
+.tree-btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;justify-content:center;width:100%;max-width:400px;}
+.tree-btn{flex:1;min-width:90px;padding:13px 8px;border:none;border-radius:16px;font-size:14px;font-weight:700;cursor:pointer;min-height:58px;}
+.tree-btn:active{transform:scale(0.95);}
+#btn-go-dress{background:#fff;color:var(--td);}
+#btn-go-shop{background:var(--yellow);color:#333;}
+#btn-go-abc{background:var(--gl);color:var(--td);}
+#btn-continue-game{background:var(--gm);color:#fff;}
+
+/* ── REWARD ── */
+#reward-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:400;padding:20px;}
+#reward-box{background:#fff;border-radius:28px;padding:30px 24px;text-align:center;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);animation:rewardPop 0.4s cubic-bezier(.175,.885,.32,1.275);position:relative;overflow:hidden;}
+@keyframes rewardPop{0%{transform:scale(0.5) rotate(-10deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+#reward-emoji{font-size:76px;margin-bottom:10px;display:block;}
+#reward-title{font-size:21px;font-weight:900;color:var(--td);margin-bottom:5px;}
+#reward-sub{font-size:14px;color:#777;margin-bottom:18px;}
+.confetti-piece{position:absolute;pointer-events:none;font-size:18px;animation:confettiFall 1.4s ease forwards;}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(130px) rotate(360deg)}}
+
+/* ── DRESS-UP ── */
+#dress-screen{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding:14px 14px env(safe-area-inset-bottom,16px);}
+#dress-stage{display:flex;flex-direction:column;align-items:center;margin:8px 0 12px;}
+#dress-animal-base{font-size:clamp(64px,16vw,100px);display:block;line-height:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));}
+#dress-worn-row{font-size:clamp(20px,5vw,32px);min-height:1.2em;text-align:center;margin-top:4px;}
+#animal-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;width:100%;scrollbar-width:none;}
+#animal-tabs::-webkit-scrollbar{display:none;}
+.animal-tab{flex-shrink:0;width:58px;height:58px;border-radius:14px;border:3px solid transparent;background:#fff;font-size:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);}
+.animal-tab.active{border-color:var(--gm);background:#f1f8f1;}
+.animal-tab.locked{filter:grayscale(1) opacity(0.4);cursor:not-allowed;}
+#cat-tabs{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0;}
+#cat-tabs::-webkit-scrollbar{display:none;}
+.cat-tab{flex-shrink:0;padding:7px 13px;border-radius:16px;border:none;background:var(--gl);color:var(--td);font-size:13px;font-weight:700;cursor:pointer;min-height:40px;}
+.cat-tab.active{background:var(--gm);color:#fff;}
+#item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:9px;}
+.item-cell{aspect-ratio:1;border-radius:14px;background:#fff;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:26px;cursor:pointer;border:3px solid transparent;position:relative;min-height:62px;}
+.item-cell.equipped{border-color:var(--gm);background:#f1f8f1;}
+.item-cell.locked{filter:grayscale(1) opacity(0.4);cursor:not-allowed;}
+.item-cell .iname{font-size:9px;color:#888;margin-top:2px;}
+.item-cell.equipped::after{content:"✓";position:absolute;top:2px;right:4px;font-size:10px;color:var(--gm);font-weight:900;}
+.item-cell.unequip{background:var(--gl);font-size:13px;color:var(--td);font-weight:700;}
+
+/* ── SHOP ── */
+#shop-screen{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding:14px 14px env(safe-area-inset-bottom,16px);}
+#shard-display{text-align:center;font-size:17px;font-weight:700;color:var(--td);background:#fff;border-radius:14px;padding:11px;margin-bottom:12px;box-shadow:var(--shadow);}
+#shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:9px;}
+.shop-cell{background:#fff;border-radius:14px;padding:9px 5px;text-align:center;box-shadow:var(--shadow);cursor:pointer;border:3px solid transparent;}
+.shop-cell.owned{border-color:var(--gl);opacity:0.6;cursor:default;}
+.shop-cell .semoji{font-size:30px;}
+.shop-cell .sname{font-size:11px;color:#555;margin:3px 0 2px;}
+.shop-cell .sprice{font-size:11px;font-weight:700;color:var(--orange);}
+.shop-cell.owned .sprice{color:var(--gm);}
+.shop-cell:not(.owned):active{transform:scale(0.94);}
+
+/* ── LV2 ── */
+.lv2-word-card{background:#fff;border-radius:16px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;border:3px solid transparent;min-height:110px;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:border-color .15s,transform .15s;-webkit-tap-highlight-color:transparent;}
+.lv2-word-card.tapped{border-color:var(--gm);}
+.lv2-word-card:active{transform:scale(0.94);}
+.wc-emoji{font-size:2.2rem;line-height:1;}
+.wc-word{font-size:1rem;font-weight:700;color:var(--td);}
+.wc-kr{font-size:0.8rem;color:#888;min-height:1em;}
+.wc-dots{display:flex;gap:6px;margin-top:5px;}
+.wc-dot{width:13px;height:13px;border-radius:50%;border:2.5px solid var(--gl);background:transparent;transition:background .2s,border-color .2s;}
+.wc-dot.filled{background:var(--gm);border-color:var(--gm);}
+.lv2-match-card{background:#fff;border-radius:14px;padding:10px 6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:3px solid transparent;min-height:78px;font-size:1.6rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:border-color .15s,transform .15s,opacity .35s;-webkit-tap-highlight-color:transparent;}
+.lv2-match-card.selected{border-color:var(--gm);transform:scale(1.05);}
+.lv2-match-card.matched{opacity:0.3;pointer-events:none;border-color:#4CAF50;}
+.lv2-match-card.wrong{animation:shake .4s;}
+
+@media(orientation:landscape)and(max-height:500px){
+  #char-base{font-size:38px;}#question-area{padding:7px 12px;}
+  #question-main{font-size:24px;min-height:30px;}.card{min-height:56px;}
+  .card .letter{font-size:20px;}#cards-area{gap:6px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HOME / START -->
+<div id="start-screen">
+  <div class="chars">🐒🦜🐸</div>
+  <h1>Jungle ABC 🌿</h1>
+  <p class="sub">레벨을 선택해서 시작해요!</p>
+  <div class="level-cards">
+    <div class="level-card" onclick="startFromLevel(0)">
+      <span class="lc-icon">🐒</span>
+      <div class="lc-body">
+        <div class="lc-title">Lv 1 · 알파벳 탐험</div>
+        <div class="lc-desc">A~Z 알파벳 이름 배우기 (26자)</div>
+      </div>
+      <span class="lc-badge">입문</span>
+    </div>
+    <div class="level-card" onclick="startFromLevel(1)">
+      <span class="lc-icon">🦜</span>
+      <div class="lc-body">
+        <div class="lc-title">Lv 2 · 단어 탐험</div>
+        <div class="lc-desc">알파벳으로 시작하는 단어 배우고 매칭!</div>
+      </div>
+      <span class="lc-badge">보통</span>
+    </div>
+    <div class="level-card" onclick="startFromLevel(2)">
+      <span class="lc-icon">🐸</span>
+      <div class="lc-body">
+        <div class="lc-title">Lv 3 · 단모음 채우기</div>
+        <div class="lc-desc">cat, dog, sun… 빈 모음 찾기 (30문항)</div>
+      </div>
+      <span class="lc-badge">심화</span>
+    </div>
+  </div>
+  <div id="home-active-animal" style="font-size:3rem;margin:4px 0;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.2));"></div>
+  <div style="display:flex;gap:10px;width:100%;max-width:480px;margin-top:2px;">
+    <button onclick="goTreeFromHome()" style="flex:1;padding:14px 6px;background:rgba(255,255,255,0.22);border:none;border-radius:16px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;">🌳 나무</button>
+    <button onclick="showDressFromHome()" style="flex:1;padding:14px 6px;background:rgba(255,255,255,0.22);border:none;border-radius:16px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;">🎨 꾸미기</button>
+    <button onclick="showAlphaScreen('home')" style="flex:1;padding:14px 6px;background:rgba(255,255,255,0.22);border:none;border-radius:16px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;">📖 도감</button>
+  </div>
+  <button onclick="document.getElementById('reset-overlay').classList.remove('hidden')" style="margin-top:14px;padding:8px 20px;background:rgba(0,0,0,0.18);border:none;border-radius:12px;color:rgba(255,255,255,0.7);font-size:0.8rem;cursor:pointer;">🔄 초기화</button>
+</div>
+
+<!-- RESET CONFIRM -->
+<div id="reset-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:22px;padding:28px 24px;text-align:center;max-width:300px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+    <div style="font-size:2.5rem;margin-bottom:8px;">⚠️</div>
+    <div style="font-size:1.1rem;font-weight:800;color:#333;margin-bottom:6px;">초기화하시겠습니까?</div>
+    <div style="font-size:0.88rem;color:#888;margin-bottom:22px;">별, 동물 친구, 아이템이<br>모두 사라져요!</div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="doReset()" style="flex:1;padding:13px;background:#ef5350;color:#fff;border:none;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;">초기화</button>
+      <button onclick="document.getElementById('reset-overlay').classList.add('hidden')" style="flex:1;padding:13px;background:var(--gl);color:var(--td);border:none;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="app">
+  <div id="topbar">
+    <button class="icon-btn" onclick="goHome()" title="홈">🏠</button>
+    <div id="level-badge">Lv 1</div>
+    <div id="star-count">⭐ <span id="stars">0</span></div>
+    <button class="icon-btn" onclick="goTreeFromGame()" title="별나무">🌳</button>
+    <button class="icon-btn" id="btn-sound" onclick="toggleSound()">🔊</button>
+  </div>
+  <div id="progress-wrap"><div id="progress-bar" style="width:0%"></div></div>
+  <div id="character-area">
+    <div id="char-wrap">
+      <span id="char-base">🐒</span>
+      <span id="char-items"></span>
+    </div>
+  </div>
+  <div id="question-area">
+    <div id="question-label">어떤 글자일까요?</div>
+    <div id="question-main"></div>
+    <div id="kr-hint"></div>
+    <button id="btn-hint" onclick="playHint()">🔊 다시 듣기</button>
+  </div>
+  <div id="feedback"></div>
+  <div id="cards-area"></div>
+</div>
+
+<!-- LV2 WORD + MATCHING -->
+<div id="lv2-screen" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:150;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);">
+  <div id="lv2-topbar" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;flex-shrink:0;">
+    <button onclick="lv2GoHome()" style="font-size:1.4rem;background:none;border:none;cursor:pointer;width:44px;height:44px;">🏠</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <div id="lv2-progress" style="font-size:1rem;font-weight:700;color:var(--td);">1 / 10</div>
+      <div id="lv2-star-count" style="font-size:0.95rem;font-weight:700;color:var(--td);">⭐ 0</div>
+    </div>
+    <button onclick="lv2GoTree()" style="font-size:1.4rem;background:none;border:none;cursor:pointer;width:44px;height:44px;">🌳</button>
+  </div>
+  <div id="lv2-phase1" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 16px 16px;gap:10px;overflow-y:auto;">
+    <div id="lv2-letter-title" style="font-size:4.5rem;font-weight:900;color:var(--td);line-height:1;">A</div>
+    <div id="lv2-char" style="font-size:2rem;">🦜</div>
+    <div id="lv2-phase1-label" style="font-size:0.95rem;color:#666;">카드를 눌러서 단어를 들어봐요!</div>
+    <div id="lv2-word-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:420px;"></div>
+    <button id="lv2-btn-next" class="hidden" onclick="lv2StartPhase2()"
+      style="padding:14px 40px;font-size:1.1rem;font-weight:700;background:var(--gm);color:#fff;border:none;border-radius:16px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.15);">
+      매칭 게임 시작 →
+    </button>
+  </div>
+  <div id="lv2-phase2" class="hidden" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 16px 16px;gap:10px;overflow-y:auto;">
+    <div id="lv2-letter-title2" style="font-size:2.5rem;font-weight:900;color:var(--td);line-height:1.1;">A</div>
+    <div style="font-size:0.95rem;color:#666;">그림과 단어를 연결해봐요!</div>
+    <div id="lv2-match-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;"></div>
+  </div>
+  <div id="lv2-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:160;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:24px;padding:32px 24px;text-align:center;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.25);animation:rewardPop 0.35s cubic-bezier(.175,.885,.32,1.275);">
+      <div id="lv2-modal-emoji" style="font-size:3rem;">🎉</div>
+      <div id="lv2-modal-text" style="font-size:1.2rem;font-weight:700;margin:12px 0;color:var(--td);"></div>
+      <button id="lv2-modal-btn" onclick="lv2NextLetter()"
+        style="padding:13px 36px;font-size:1.1rem;font-weight:700;background:var(--gm);color:#fff;border:none;border-radius:14px;cursor:pointer;">
+        다음 →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LEVEL COMPLETE -->
+<div class="overlay hidden" id="level-overlay">
+  <div class="modal">
+    <div style="font-size:48px;margin-bottom:10px">🎉</div>
+    <h2 id="level-title">레벨 완료!</h2>
+    <p id="level-msg">대단해요!</p>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-next-level" onclick="nextLevel()">다음으로 ▶</button>
+      <button class="btn-secondary" onclick="goTreeFromLevelOverlay()">🌳 나무 보기</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME COMPLETE -->
+<div class="overlay hidden" id="complete-overlay">
+  <div class="modal">
+    <div style="font-size:48px;margin-bottom:10px">🏆</div>
+    <h2>모두 완료!</h2>
+    <p>정글을 정복했어요! 🌿</p>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="completeGoTree()">🌳 나무 보기</button>
+      <button class="btn-secondary" onclick="showAlphaScreen(null)">📖 도감</button>
+      <button class="btn-secondary" onclick="goHome()">🏠 홈</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALPHA COLLECTION -->
+<div id="alpha-screen" class="full-screen hidden">
+  <div class="screen-header">
+    <button class="back-btn" id="alpha-back-btn">←</button>
+    <h2>📖 알파벳 도감</h2>
+    <div style="width:44px"></div>
+  </div>
+  <div id="alphabet-grid"></div>
+  <div style="text-align:center;margin-top:8px">
+    <button class="btn-primary" onclick="goHome()">🏠 홈으로</button>
+  </div>
+</div>
+
+<!-- TREE -->
+<div id="tree-screen" class="hidden">
+  <div id="tree-header">
+    <button class="back-btn" id="tree-back-btn">←</button>
+    <h2>🌳 별나무</h2>
+    <div id="shard-count">✨ <span id="shard-num">0</span></div>
+  </div>
+  <div id="tree-wrap">
+    <div id="tree-total-stars" style="color:#fff;font-size:1rem;font-weight:700;background:rgba(255,255,255,0.15);padding:6px 18px;border-radius:20px;margin-bottom:4px;">⭐ 총 0개 획득</div>
+    <div id="tree-emoji">🌱</div>
+    <div id="fruits-row"></div>
+    <div id="tree-info"></div>
+    <div style="color:#c8e6c9;font-size:0.85rem;margin-top:4px;text-align:center;">다음 열매까지 <span id="tree-progress-label">0 / 10</span>개</div>
+    <div id="tree-stars-bar"><div id="tree-stars-fill" style="width:0%"></div></div>
+  </div>
+  <div class="tree-btn-row">
+    <button class="tree-btn" id="btn-go-dress" onclick="showDressFromTree()">🎨 꾸미기</button>
+    <button class="tree-btn" id="btn-go-shop"  onclick="showShopFromTree()">🛒 교환소</button>
+    <button class="tree-btn" id="btn-go-abc"   onclick="showAlphaScreen('tree')">📖 도감</button>
+    <button class="tree-btn hidden" id="btn-continue-game" onclick="hidePendingTree()">▶ 계속하기</button>
+  </div>
+</div>
+
+<!-- REWARD -->
+<div id="reward-overlay" class="hidden">
+  <div id="reward-box">
+    <span id="reward-emoji">🎁</span>
+    <div id="reward-title">새 친구 등장!</div>
+    <div id="reward-sub"></div>
+    <button class="btn-primary" onclick="closeReward()">좋아! 🎉</button>
+  </div>
+</div>
+
+<!-- DRESS-UP -->
+<div id="dress-screen" class="hidden">
+  <div class="screen-header">
+    <button class="back-btn" onclick="hideDress()">←</button>
+    <h2>🎨 동물 꾸미기</h2>
+    <div style="width:44px"></div>
+  </div>
+  <div id="dress-stage">
+    <span id="dress-animal-base">🐒</span>
+    <div id="dress-worn-row"></div>
+  </div>
+  <div style="font-size:12px;color:#666;text-align:center;margin-bottom:8px">내 동물 친구들</div>
+  <div id="animal-tabs"></div>
+  <div id="cat-tabs"></div>
+  <div id="item-grid"></div>
+  <div style="text-align:center;margin-top:14px">
+    <button class="btn-primary" onclick="activeAnimalId=dressingAnimalId;applyOutfitToGame();updateHomeAnimal();hideDress()">게임에 적용 ✓</button>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div id="shop-screen" class="hidden">
+  <div class="screen-header">
+    <button class="back-btn" onclick="hideShop()">←</button>
+    <h2>🛒 별조각 교환소</h2>
+    <div style="width:44px"></div>
+  </div>
+  <div id="shard-display">✨ 별조각 <span id="shop-shard-num">0</span>개</div>
+  <div style="font-size:12px;color:#666;margin-bottom:10px;text-align:center">별조각 10개로 원하는 것을 얻을 수 있어요!</div>
+  <div id="shop-grid"></div>
+</div>
+
+<script>
+// ══ AUDIO ══
+let audioCtx=null, soundEnabled=true;
+function getCtx(){if(!audioCtx)try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}return audioCtx;}
+function unlockAudio(){const c=getCtx();if(c&&c.state==='suspended')c.resume().catch(()=>{});}
+document.addEventListener('touchstart',unlockAudio,{once:true});
+document.addEventListener('click',unlockAudio,{once:true});
+function beep(f,d,type='sine',vol=0.28){
+  if(!soundEnabled)return;
+  try{const c=getCtx();if(!c)return;const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type;o.frequency.value=f;g.gain.setValueAtTime(vol,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d);o.start(c.currentTime);o.stop(c.currentTime+d);}catch(e){}
+}
+function playCorrect(){beep(523,0.12);setTimeout(()=>beep(659,0.12),120);setTimeout(()=>beep(784,0.22),240);}
+function playWrong(){beep(300,0.2,'sawtooth',0.18);}
+function playReward(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.18),i*110));}
+function toggleSound(){soundEnabled=!soundEnabled;document.getElementById('btn-sound').textContent=soundEnabled?'🔊':'🔇';}
+function speak(text){
+  if(!soundEnabled||!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.85;u.pitch=1.1;u.volume=1;
+  window.speechSynthesis.speak(u);
+}
+
+// ══ DATA ══
+const ANIMALS=[
+  {id:'monkey',   emoji:'🐒',name:'원숭이'},
+  {id:'parrot',   emoji:'🦜',name:'앵무새'},
+  {id:'frog',     emoji:'🐸',name:'개구리'},
+  {id:'croc',     emoji:'🐊',name:'악어'},
+  {id:'tiger',    emoji:'🐯',name:'호랑이'},
+  {id:'elephant', emoji:'🐘',name:'코끼리'},
+  {id:'snake',    emoji:'🐍',name:'뱀'},
+  {id:'butterfly',emoji:'🦋',name:'나비'},
+];
+const ITEMS=[
+  {id:'hat1', emoji:'🎩',name:'실크모자', cat:'hat'},
+  {id:'hat2', emoji:'👑',name:'왕관',     cat:'hat'},
+  {id:'hat3', emoji:'🪖',name:'탐험모자', cat:'hat'},
+  {id:'hat4', emoji:'🍄',name:'버섯',     cat:'hat'},
+  {id:'face1',emoji:'🕶️',name:'선글라스', cat:'face'},
+  {id:'face2',emoji:'👓',name:'안경',     cat:'face'},
+  {id:'face3',emoji:'🔴',name:'코스티커', cat:'face'},
+  {id:'face4',emoji:'⭐',name:'별스티커', cat:'face'},
+  {id:'neck1',emoji:'📿',name:'목걸이',   cat:'neck'},
+  {id:'neck2',emoji:'🎀',name:'리본',     cat:'neck'},
+  {id:'neck3',emoji:'🧣',name:'스카프',   cat:'neck'},
+  {id:'back1',emoji:'🦸',name:'망토',     cat:'back'},
+  {id:'back2',emoji:'🪽',name:'날개',     cat:'back'},
+  {id:'back3',emoji:'🎒',name:'배낭',     cat:'back'},
+  {id:'hand1',emoji:'🪄',name:'지팡이',   cat:'hand'},
+  {id:'hand2',emoji:'🎈',name:'풍선',     cat:'hand'},
+  {id:'hand3',emoji:'💐',name:'꽃다발',   cat:'hand'},
+  {id:'hand4',emoji:'🌂',name:'우산',     cat:'hand'},
+];
+const CAT_NAMES={hat:'모자',face:'얼굴',neck:'목',back:'등',hand:'손'};
+
+const ALL_ALPHA=[
+  {q:'A',kr:'에이',  choices:['A','H','N','V']},
+  {q:'B',kr:'비',    choices:['B','D','P','R']},
+  {q:'C',kr:'씨',    choices:['C','G','O','Q']},
+  {q:'D',kr:'디',    choices:['D','B','O','P']},
+  {q:'E',kr:'이',    choices:['E','F','L','T']},
+  {q:'F',kr:'에프',  choices:['F','E','P','T']},
+  {q:'G',kr:'지',    choices:['G','C','O','Q']},
+  {q:'H',kr:'에이치',choices:['H','A','M','N']},
+  {q:'I',kr:'아이',  choices:['I','J','L','T']},
+  {q:'J',kr:'제이',  choices:['J','I','L','U']},
+  {q:'K',kr:'케이',  choices:['K','R','X','Y']},
+  {q:'L',kr:'엘',    choices:['L','I','J','T']},
+  {q:'M',kr:'엠',    choices:['M','N','W','H']},
+  {q:'N',kr:'엔',    choices:['N','M','H','U']},
+  {q:'O',kr:'오',    choices:['O','C','G','Q']},
+  {q:'P',kr:'피',    choices:['P','B','D','F']},
+  {q:'Q',kr:'큐',    choices:['Q','G','O','C']},
+  {q:'R',kr:'알',    choices:['R','B','P','K']},
+  {q:'S',kr:'에스',  choices:['S','Z','C','G']},
+  {q:'T',kr:'티',    choices:['T','I','J','L']},
+  {q:'U',kr:'유',    choices:['U','V','J','Y']},
+  {q:'V',kr:'브이',  choices:['V','U','W','Y']},
+  {q:'W',kr:'더블유',choices:['W','M','V','N']},
+  {q:'X',kr:'엑스',  choices:['X','K','Y','Z']},
+  {q:'Y',kr:'와이',  choices:['Y','V','X','K']},
+  {q:'Z',kr:'지',    choices:['Z','S','X','N']},
+];
+const LV2_LETTER_WORDS={
+  A:[{word:'apple',emoji:'🍎',kr:'애플'},{word:'ant',emoji:'🐜',kr:'앤트'},{word:'arm',emoji:'💪',kr:'암'},{word:'alligator',emoji:'🐊',kr:'앨리게이터'}],
+  B:[{word:'ball',emoji:'⚽',kr:'볼'},{word:'bear',emoji:'🐻',kr:'베어'},{word:'bee',emoji:'🐝',kr:'비'},{word:'bus',emoji:'🚌',kr:'버스'}],
+  C:[{word:'cat',emoji:'🐱',kr:'캣'},{word:'car',emoji:'🚗',kr:'카'},{word:'cup',emoji:'☕',kr:'컵'},{word:'cow',emoji:'🐄',kr:'카우'}],
+  D:[{word:'dog',emoji:'🐶',kr:'독'},{word:'duck',emoji:'🦆',kr:'덕'},{word:'drum',emoji:'🥁',kr:'드럼'},{word:'door',emoji:'🚪',kr:'도어'}],
+  E:[{word:'egg',emoji:'🥚',kr:'에그'},{word:'eye',emoji:'👁',kr:'아이'},{word:'ear',emoji:'👂',kr:'이어'},{word:'elephant',emoji:'🐘',kr:'엘리펀트'}],
+  F:[{word:'fish',emoji:'🐟',kr:'피시'},{word:'frog',emoji:'🐸',kr:'프로그'},{word:'fox',emoji:'🦊',kr:'폭스'},{word:'flower',emoji:'🌸',kr:'플라워'}],
+  G:[{word:'goat',emoji:'🐐',kr:'고트'},{word:'grape',emoji:'🍇',kr:'그레이프'},{word:'gift',emoji:'🎁',kr:'기프트'},{word:'gorilla',emoji:'🦍',kr:'고릴라'}],
+  H:[{word:'hat',emoji:'🎩',kr:'햇'},{word:'hen',emoji:'🐔',kr:'헨'},{word:'horn',emoji:'📯',kr:'혼'},{word:'hug',emoji:'🤗',kr:'허그'}],
+  I:[{word:'ice',emoji:'🧊',kr:'아이스'},{word:'ink',emoji:'🖊',kr:'잉크'},{word:'insect',emoji:'🐛',kr:'인섹트'},{word:'island',emoji:'🏝️',kr:'아일랜드'}],
+  J:[{word:'jam',emoji:'🍓',kr:'잼'},{word:'jet',emoji:'✈️',kr:'젯'},{word:'juice',emoji:'🧃',kr:'쥬스'},{word:'jellyfish',emoji:'🪼',kr:'젤리피쉬'}],
+  K:[{word:'key',emoji:'🔑',kr:'키'},{word:'kite',emoji:'🪁',kr:'카이트'},{word:'king',emoji:'👑',kr:'킹'},{word:'koala',emoji:'🐨',kr:'코알라'}],
+  L:[{word:'lion',emoji:'🦁',kr:'라이언'},{word:'leaf',emoji:'🍃',kr:'리프'},{word:'lamp',emoji:'💡',kr:'램프'},{word:'lock',emoji:'🔒',kr:'록'}],
+  M:[{word:'moon',emoji:'🌙',kr:'문'},{word:'map',emoji:'🗺',kr:'맵'},{word:'milk',emoji:'🥛',kr:'밀크'},{word:'mouse',emoji:'🐭',kr:'마우스'}],
+  N:[{word:'noodle',emoji:'🍜',kr:'누들'},{word:'nest',emoji:'🪺',kr:'네스트'},{word:'nut',emoji:'🥜',kr:'넛'},{word:'nose',emoji:'👃',kr:'노즈'}],
+  O:[{word:'owl',emoji:'🦉',kr:'아울'},{word:'orange',emoji:'🍊',kr:'오렌지'},{word:'octopus',emoji:'🐙',kr:'옥토퍼스'},{word:'ocean',emoji:'🌊',kr:'오션'}],
+  P:[{word:'pig',emoji:'🐷',kr:'피그'},{word:'pizza',emoji:'🍕',kr:'피자'},{word:'pen',emoji:'✏️',kr:'펜'},{word:'pear',emoji:'🍐',kr:'페어'}],
+  Q:[{word:'queen',emoji:'👸',kr:'퀸'},{word:'quick',emoji:'🐇',kr:'퀵'},{word:'quilt',emoji:'🛌',kr:'퀼트'},{word:'quiet',emoji:'🤫',kr:'콰이엇'}],
+  R:[{word:'rabbit',emoji:'🐰',kr:'래빗'},{word:'rain',emoji:'🌧',kr:'레인'},{word:'ring',emoji:'💍',kr:'링'},{word:'rose',emoji:'🌹',kr:'로즈'}],
+  S:[{word:'sun',emoji:'☀️',kr:'선'},{word:'star',emoji:'⭐',kr:'스타'},{word:'ship',emoji:'🚢',kr:'십'},{word:'snake',emoji:'🐍',kr:'스네이크'}],
+  T:[{word:'tiger',emoji:'🐯',kr:'타이거'},{word:'tree',emoji:'🌲',kr:'트리'},{word:'train',emoji:'🚂',kr:'트레인'},{word:'tent',emoji:'⛺',kr:'텐트'}],
+  U:[{word:'umbrella',emoji:'☂️',kr:'엄브렐라'},{word:'up',emoji:'⬆️',kr:'업'},{word:'unicorn',emoji:'🦄',kr:'유니콘'},{word:'uniform',emoji:'👔',kr:'유니폼'}],
+  V:[{word:'van',emoji:'🚐',kr:'밴'},{word:'vest',emoji:'🦺',kr:'베스트'},{word:'volcano',emoji:'🌋',kr:'볼케이노'},{word:'violin',emoji:'🎻',kr:'바이올린'}],
+  W:[{word:'wolf',emoji:'🐺',kr:'울프'},{word:'whale',emoji:'🐋',kr:'웨일'},{word:'web',emoji:'🕸',kr:'웹'},{word:'wing',emoji:'🪽',kr:'윙'}],
+  X:[{word:'xray',emoji:'🩻',kr:'엑스레이'},{word:'xylophone',emoji:'🎹',kr:'자일로폰'},{word:'fox',emoji:'🦊',kr:'폭스'},{word:'box',emoji:'📦',kr:'박스'}],
+  Y:[{word:'yellow',emoji:'🟡',kr:'옐로우'},{word:'yarn',emoji:'🧶',kr:'얀'},{word:'yo-yo',emoji:'🪀',kr:'요요'},{word:'yacht',emoji:'⛵',kr:'요트'}],
+  Z:[{word:'zebra',emoji:'🦓',kr:'지브라'},{word:'zoo',emoji:'🦁',kr:'주'},{word:'zoom',emoji:'🔍',kr:'줌'},{word:'zero',emoji:'0️⃣',kr:'지로'}],
+};
+
+// 단모음 30문항 (a×6, e×6, i×6, o×6, u×6) — 패턴 중복 없음
+const BLANK_ALL=[
+  // ─ a ─
+  {q:'c_t', img:'🐱',answer:'a',word:'cat', kr:'고양이'},
+  {q:'h_t', img:'🎩',answer:'a',word:'hat', kr:'모자'},
+  {q:'b_t', img:'🦇',answer:'a',word:'bat', kr:'박쥐'},
+  {q:'r_t', img:'🐀',answer:'a',word:'rat', kr:'쥐'},
+  {q:'m_p', img:'🗺️',answer:'a',word:'map', kr:'지도'},
+  {q:'c_n', img:'🥫',answer:'a',word:'can', kr:'캔'},
+  // ─ e ─
+  {q:'b_d', img:'🛏️',answer:'e',word:'bed', kr:'침대'},
+  {q:'h_n', img:'🐔',answer:'e',word:'hen', kr:'암탉'},
+  {q:'n_t', img:'🥅',answer:'e',word:'net', kr:'그물'},
+  {q:'j_t', img:'✈️',answer:'e',word:'jet', kr:'제트기'},
+  {q:'w_b', img:'🕸️',answer:'e',word:'web', kr:'거미줄'},
+  {q:'t_n', img:'🔟',answer:'e',word:'ten', kr:'숫자 10'},
+  // ─ i ─
+  {q:'p_g', img:'🐷',answer:'i',word:'pig', kr:'돼지'},
+  {q:'f_n', img:'🐟',answer:'i',word:'fin', kr:'지느러미'},
+  {q:'l_d', img:'🪣',answer:'i',word:'lid', kr:'뚜껑'},
+  {q:'s_t', img:'🪑',answer:'i',word:'sit', kr:'앉다'},
+  {q:'w_n', img:'🏆',answer:'i',word:'win', kr:'이기다'},
+  {q:'t_p', img:'💡',answer:'i',word:'tip', kr:'끝부분'},
+  // ─ o ─
+  {q:'d_g', img:'🐶',answer:'o',word:'dog', kr:'강아지'},
+  {q:'l_g', img:'🪵',answer:'o',word:'log', kr:'통나무'},
+  {q:'p_t', img:'🍲',answer:'o',word:'pot', kr:'냄비'},
+  {q:'f_x', img:'🦊',answer:'o',word:'fox', kr:'여우'},
+  {q:'h_p', img:'🦘',answer:'o',word:'hop', kr:'깡충뛰기'},
+  {q:'d_t', img:'🔵',answer:'o',word:'dot', kr:'점'},
+  // ─ u ─
+  {q:'b_g', img:'🐛',answer:'u',word:'bug', kr:'벌레'},
+  {q:'s_n', img:'☀️',answer:'u',word:'sun', kr:'태양'},
+  {q:'c_p', img:'🥤',answer:'u',word:'cup', kr:'컵'},
+  {q:'t_b', img:'🛁',answer:'u',word:'tub', kr:'욕조'},
+  {q:'g_m', img:'🍬',answer:'u',word:'gum', kr:'껌'},
+  {q:'b_n', img:'🍞',answer:'u',word:'bun', kr:'빵'},
+];
+
+// 레벨 정의
+let LEVELS=[
+  {id:1,name:'Lv 1',animalId:'monkey',label:'어떤 알파벳일까요?',type:'match',items:[]},
+  {id:2,name:'Lv 2',animalId:'parrot',label:'어떤 알파벳일까요?',type:'match',items:[]},
+  {id:3,name:'Lv 3',animalId:'frog',  label:'빈칸에 들어갈 모음은?',type:'blank',items:[]},
+];
+const VOWELS=['a','e','i','o','u'];
+
+// ══ STATE ══
+let curLv=0, curQ=0, displayStars=0, canAnswer=true;
+let collected=new Set();
+let ownedAnimals=new Set(['monkey']), ownedItems=new Set();
+let shards=0, starMod=0, pendingFruits=0;
+let outfits={}, activeAnimalId='monkey';
+let dressingAnimalId='monkey', dressCat='hat';
+let treeReturnAction=null; // 'game' | 'levelOverlay' | 'lv2'
+// lv2 state
+let lv2Letters=[],lv2LetterIdx=0,lv2Phase=1;
+let lv2PlayCounts=[],lv2CardTapped=[],lv2AllTapped=false;
+let lv2Selected=null,lv2Matched=new Set(),lv2Locked=false;
+let selectedStartLevel=0;
+
+// ══ PERSISTENCE ══
+function saveAll(){
+  try{localStorage.setItem('jabc3',JSON.stringify({
+    collected:[...collected],ownedAnimals:[...ownedAnimals],ownedItems:[...ownedItems],
+    shards,starMod,pendingFruits,outfits,activeAnimalId,displayStars
+  }));}catch(e){}
+}
+function loadAll(){
+  try{
+    const raw=localStorage.getItem('jabc3');if(!raw)return;const d=JSON.parse(raw);
+    if(d.collected)   d.collected.forEach(v=>collected.add(v));
+    if(d.ownedAnimals)d.ownedAnimals.forEach(v=>ownedAnimals.add(v));
+    if(d.ownedItems)  d.ownedItems.forEach(v=>ownedItems.add(v));
+    shards=d.shards||0;starMod=d.starMod||0;pendingFruits=d.pendingFruits||0;
+    outfits=d.outfits||{};activeAnimalId=d.activeAnimalId||'monkey';displayStars=d.displayStars||0;
+  }catch(e){}
+}
+loadAll();
+document.addEventListener('DOMContentLoaded',updateHomeAnimal);
+
+// ══ HELPERS ══
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function getItem(){return LEVELS[curLv].items[curQ];}
+function getLvType(item){
+  const lv=LEVELS[curLv];
+  if(lv.type==='blank')return 'blank';
+  if(lv.type==='mixed')return item.type||'match';
+  return lv.type;
+}
+function animalEmoji(id){return ANIMALS.find(a=>a.id===id)?.emoji||'🐒';}
+function itemEmoji(id){return id?ITEMS.find(i=>i.id===id)?.emoji||'':'';}
+function getOutfit(aid){if(!outfits[aid])outfits[aid]={hat:null,face:null,neck:null,back:null,hand:null};return outfits[aid];}
+function getWornEmojis(aid){return Object.values(getOutfit(aid)).filter(Boolean).map(itemEmoji).join('');}
+
+// ══ HOME ══
+function startFromLevel(idx){
+  unlockAudio();
+  LEVELS[0].items=shuffle(ALL_ALPHA);
+  LEVELS[2].items=shuffle(BLANK_ALL);
+  curLv=idx;curQ=0;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('stars').textContent=displayStars;
+  if(idx===1){initLv2();return;}
+  document.getElementById('lv2-screen').classList.add('hidden');
+  renderQuestion();
+}
+function goHome(){
+  ['level-overlay','complete-overlay','alpha-screen','tree-screen','dress-screen','shop-screen','lv2-screen'].forEach(id=>{
+    document.getElementById(id).classList.add('hidden');
+  });
+  document.getElementById('start-screen').classList.remove('hidden');
+  updateHomeAnimal();
+}
+function doReset(){
+  localStorage.removeItem('jabc3');
+  collected=new Set();ownedAnimals=new Set(['monkey']);ownedItems=new Set();
+  shards=0;starMod=0;pendingFruits=0;outfits={};activeAnimalId='monkey';displayStars=0;
+  document.getElementById('reset-overlay').classList.add('hidden');
+  document.getElementById('stars').textContent=0;
+  updateHomeAnimal();
+}
+
+// ══ CHARACTER ══
+function updateGameCharacter(){
+  document.getElementById('char-base').textContent=animalEmoji(activeAnimalId);
+  document.getElementById('char-items').textContent=getWornEmojis(activeAnimalId);
+}
+function applyOutfitToGame(){updateGameCharacter();saveAll();}
+function danceCharacter(){
+  const w=document.getElementById('char-wrap');
+  w.classList.remove('dance');void w.offsetWidth;w.classList.add('dance');
+  w.addEventListener('animationend',()=>w.classList.remove('dance'),{once:true});
+}
+
+// ══ RENDER ══
+function renderQuestion(){
+  const lv=LEVELS[curLv],item=getItem(),type=getLvType(item);
+  document.getElementById('level-badge').textContent=lv.name;
+  updateGameCharacter();
+  document.getElementById('progress-bar').style.width=((curQ/lv.items.length)*100)+'%';
+  document.getElementById('question-label').textContent=lv.label||(type==='blank'?'빈칸에 들어갈 모음은?':'어떤 알파벳일까요?');
+  document.getElementById('kr-hint').textContent=(type==='match'&&item.kr)?item.kr:'';
+  const qm=document.getElementById('question-main');
+  if(type==='blank'){
+    const p=item.q.split('_');
+    qm.innerHTML=`<span>${p[0].toUpperCase()}</span><span class="blank"></span><span>${p[1].toUpperCase()}</span><span style="margin-left:10px;font-size:clamp(24px,7vw,42px)">${item.img}</span>`;
+  }else{qm.textContent='?';}
+  setFeedback('','');
+  const ca=document.getElementById('cards-area');ca.innerHTML='';
+  if(type==='blank'){
+    ca.style.gridTemplateColumns='repeat(5,1fr)';
+    VOWELS.forEach(v=>ca.appendChild(makeCard(v.toUpperCase(),'/'+v+'/',v===item.answer)));
+  }else{
+    ca.style.gridTemplateColumns='repeat(2,1fr)';
+    shuffle(item.choices).forEach(ch=>ca.appendChild(makeCard(ch,'',ch===item.q)));
+  }
+  canAnswer=true;
+  setTimeout(()=>playHint(),300);
+}
+
+function makeCard(letter,sub,isCorrect){
+  const c=document.createElement('div');c.className='card';c.dataset.correct=isCorrect?'1':'0';
+  const s=document.createElement('span');s.className='letter';s.textContent=letter;c.appendChild(s);
+  if(sub){const sm=document.createElement('span');sm.className='phonics';sm.textContent=sub;c.appendChild(sm);}
+  c.addEventListener('touchstart',e=>{e.preventDefault();handleAnswer(c);},{passive:false});
+  c.addEventListener('click',()=>handleAnswer(c));
+  return c;
+}
+
+// ══ ANSWER ══
+function handleAnswer(card){
+  if(!canAnswer)return;canAnswer=false;
+  if(card.dataset.correct==='1'){
+    card.classList.add('correct-card');playCorrect();danceCharacter();
+    displayStars++;document.getElementById('stars').textContent=displayStars;
+    starMod++;if(starMod>=10){starMod=0;pendingFruits++;}
+    const item=getItem(),type=getLvType(item);
+    collected.add(type==='match'?item.q:item.answer.toUpperCase());
+    saveAll();
+    if(type==='blank'){
+      // 단어 전체 + 한국어 뜻 표시
+      const qm=document.getElementById('question-main');
+      qm.innerHTML=`<span style="color:var(--gm);letter-spacing:6px">${item.word.toUpperCase()}</span>`;
+      document.getElementById('kr-hint').textContent=`${item.word}  ·  ${item.kr}`;
+      document.querySelectorAll('.card').forEach(c=>c.style.pointerEvents='none');
+      setFeedback('정답이에요! ⭐','correct');
+      setTimeout(()=>{
+        document.querySelectorAll('.card').forEach(c=>c.style.pointerEvents='');
+        curQ++;
+        if(curQ>=LEVELS[curLv].items.length)showLevelComplete();
+        else renderQuestion();
+      },5000);
+    }else{
+      setFeedback('정답이에요! ⭐','correct');
+      setTimeout(()=>{
+        curQ++;
+        if(curQ>=LEVELS[curLv].items.length)showLevelComplete();
+        else renderQuestion();
+      },700);
+    }
+  }else{
+    card.classList.add('wrong-card');playWrong();
+    setFeedback('다시 해볼까요? 🌿','wrong');
+    setTimeout(()=>{card.classList.remove('wrong-card');setFeedback('','');canAnswer=true;playHint();},900);
+  }
+}
+function setFeedback(t,c){const f=document.getElementById('feedback');f.textContent=t;f.className=c;}
+function playHint(){
+  const item=getItem(),type=getLvType(item);
+  speak(type==='match'?item.q:item.word);
+}
+
+// ══ LEVEL FLOW ══
+function showLevelComplete(){
+  const lv=LEVELS[curLv];
+  document.getElementById('level-title').textContent=lv.name+' 완료!';
+  document.getElementById('level-msg').textContent='별 '+displayStars+'개를 모았어요! ⭐';
+  const btn=document.getElementById('btn-next-level');
+  if(curLv>=LEVELS.length-1){
+    btn.textContent='완료! 🏆';
+    btn.onclick=()=>{document.getElementById('level-overlay').classList.add('hidden');document.getElementById('complete-overlay').classList.remove('hidden');};
+  }else{
+    btn.textContent='다음 레벨 ▶';btn.onclick=nextLevel;
+  }
+  document.getElementById('level-overlay').classList.remove('hidden');
+}
+function nextLevel(){
+  document.getElementById('level-overlay').classList.add('hidden');
+  curLv++;curQ=0;
+  if(curLv<LEVELS.length)renderQuestion();
+  else document.getElementById('complete-overlay').classList.remove('hidden');
+}
+
+// ══ TREE NAVIGATION ══
+function showTree(){
+  document.getElementById('shard-num').textContent=shards;
+  updateTreeUI();
+  document.getElementById('tree-screen').classList.remove('hidden');
+}
+function goTreeFromGame(){
+  treeReturnAction='game';
+  document.getElementById('btn-continue-game').classList.remove('hidden');
+  showTree();
+}
+function goTreeFromLevelOverlay(){
+  treeReturnAction='levelOverlay';
+  document.getElementById('level-overlay').classList.add('hidden');
+  document.getElementById('btn-continue-game').classList.remove('hidden');
+  showTree();
+}
+function completeGoTree(){
+  document.getElementById('complete-overlay').classList.add('hidden');
+  treeReturnAction=null;
+  document.getElementById('btn-continue-game').classList.add('hidden');
+  showTree();
+}
+function hidePendingTree(){
+  document.getElementById('tree-screen').classList.add('hidden');
+  document.getElementById('btn-continue-game').classList.add('hidden');
+  if(treeReturnAction==='levelOverlay'){
+    document.getElementById('level-overlay').classList.remove('hidden');
+  }else if(treeReturnAction==='lv2'){
+    document.getElementById('lv2-screen').classList.remove('hidden');
+  }else if(treeReturnAction==='home'){
+    document.getElementById('start-screen').classList.remove('hidden');
+    updateHomeAnimal();
+  }
+  treeReturnAction=null;
+}
+document.getElementById('tree-back-btn').addEventListener('click',()=>{
+  if(treeReturnAction){hidePendingTree();}
+  else{document.getElementById('tree-screen').classList.add('hidden');}
+});
+
+function updateTreeUI(){
+  document.getElementById('shard-num').textContent=shards;
+  document.getElementById('tree-total-stars').textContent='⭐ 총 '+displayStars+'개 획득';
+  document.getElementById('tree-progress-label').textContent=starMod+' / 10';
+  const pct=(starMod/10)*100;
+  const fill=document.getElementById('tree-stars-fill');
+  fill.style.width=pct+'%';fill.textContent='';
+  const total=Math.floor(displayStars/10);
+  document.getElementById('tree-emoji').textContent=total>=20?'🌲':total>=10?'🌳':total>=4?'🌿':'🌱';
+  renderFruits();
+}
+function renderFruits(){
+  const row=document.getElementById('fruits-row');row.innerHTML='';
+  for(let i=0;i<pendingFruits;i++){
+    const f=document.createElement('span');
+    f.className='fruit';f.textContent='🍎';
+    f.addEventListener('touchstart',e=>{e.preventDefault();openFruit(f);},{passive:false});
+    f.addEventListener('click',()=>openFruit(f));
+    row.appendChild(f);
+  }
+  const totalEarned=Math.floor(displayStars/10);
+  const alreadyOpened=totalEarned-pendingFruits;
+  document.getElementById('tree-info').textContent=
+    pendingFruits>0?`🍎 열매 ${pendingFruits}개! 터치해서 열어봐요`:
+    totalEarned>0?`열매 ${totalEarned}개 모두 열었어요! (${10-starMod}개 더 모으면 새 열매)`:
+    `별 10개 모으면 첫 열매가 열려요!`;
+}
+function openFruit(el){
+  if(el.classList.contains('shaking'))return;
+  el.classList.add('shaking');
+  el.addEventListener('animationend',()=>{
+    pendingFruits--;saveAll();giveReward();
+  },{once:true});
+}
+
+// ══ REWARD ══
+function giveReward(){
+  const isAnimal=Math.random()<0.3;
+  let pool,chosen;
+  if(isAnimal){
+    pool=ANIMALS.filter(a=>!ownedAnimals.has(a.id));
+    if(!pool.length){shards+=3;saveAll();showShardReward(3);return;}
+    chosen=pool[Math.floor(Math.random()*pool.length)];
+    ownedAnimals.add(chosen.id);
+  }else{
+    pool=ITEMS.filter(i=>!ownedItems.has(i.id));
+    if(!pool.length){shards+=3;saveAll();showShardReward(3);return;}
+    chosen=pool[Math.floor(Math.random()*pool.length)];
+    ownedItems.add(chosen.id);
+  }
+  saveAll();playReward();
+  document.getElementById('reward-emoji').textContent=chosen.emoji;
+  document.getElementById('reward-title').textContent=isAnimal?'새 친구 등장! 🎉':'새 아이템! 🎁';
+  document.getElementById('reward-sub').textContent=chosen.name+(isAnimal?' 친구를 얻었어요!':'을(를) 얻었어요!');
+  spawnConfetti();
+  document.getElementById('reward-overlay').classList.remove('hidden');
+}
+function showShardReward(n){
+  playReward();
+  document.getElementById('reward-emoji').textContent='✨';
+  document.getElementById('reward-title').textContent='별조각 획득!';
+  document.getElementById('reward-sub').textContent='별조각 '+n+'개를 받았어요!';
+  document.getElementById('reward-overlay').classList.remove('hidden');
+}
+function closeReward(){
+  document.getElementById('reward-overlay').classList.add('hidden');
+  updateTreeUI();
+}
+function spawnConfetti(){
+  const box=document.getElementById('reward-box');
+  ['🌟','🎉','✨','🍀','🌈','⭐'].forEach((e,i)=>{
+    const s=document.createElement('span');s.className='confetti-piece';s.textContent=e;
+    s.style.cssText=`left:${5+i*15}%;top:5px;animation-delay:${i*0.08}s`;
+    box.appendChild(s);s.addEventListener('animationend',()=>s.remove(),{once:true});
+  });
+}
+
+// ══ DRESS-UP ══
+let dressFrom=null;
+function showDressFromTree(){
+  dressFrom='tree';
+  dressingAnimalId=activeAnimalId;dressCat='hat';
+  renderAnimalTabs();renderCatTabs();renderItemGrid();renderDressStage();
+  document.getElementById('dress-screen').classList.remove('hidden');
+}
+function showDressFromHome(){
+  dressFrom='home';
+  document.getElementById('start-screen').classList.add('hidden');
+  dressingAnimalId=activeAnimalId;dressCat='hat';
+  renderAnimalTabs();renderCatTabs();renderItemGrid();renderDressStage();
+  document.getElementById('dress-screen').classList.remove('hidden');
+}
+function hideDress(){
+  document.getElementById('dress-screen').classList.add('hidden');
+  if(dressFrom==='home'){document.getElementById('start-screen').classList.remove('hidden');updateHomeAnimal();}
+  dressFrom=null;
+}
+function renderDressStage(){
+  document.getElementById('dress-animal-base').textContent=animalEmoji(dressingAnimalId);
+  document.getElementById('dress-worn-row').textContent=getWornEmojis(dressingAnimalId);
+}
+function renderAnimalTabs(){
+  const wrap=document.getElementById('animal-tabs');wrap.innerHTML='';
+  ANIMALS.forEach(a=>{
+    const b=document.createElement('button');
+    b.className='animal-tab'+(dressingAnimalId===a.id?' active':'')+(ownedAnimals.has(a.id)?'':' locked');
+    b.textContent=a.emoji;b.title=a.name;
+    if(ownedAnimals.has(a.id)){
+      b.addEventListener('touchstart',e=>{e.preventDefault();selectDressAnimal(a.id,b);},{passive:false});
+      b.addEventListener('click',()=>selectDressAnimal(a.id,b));
+    }
+    wrap.appendChild(b);
+  });
+}
+function selectDressAnimal(id,btn){
+  dressingAnimalId=id;
+  document.querySelectorAll('.animal-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDressStage();renderItemGrid();
+}
+function renderCatTabs(){
+  const wrap=document.getElementById('cat-tabs');wrap.innerHTML='';
+  Object.entries(CAT_NAMES).forEach(([cat,name])=>{
+    const b=document.createElement('button');
+    b.className='cat-tab'+(dressCat===cat?' active':'');b.textContent=name;
+    b.addEventListener('touchstart',e=>{e.preventDefault();selectCat(cat,b);},{passive:false});
+    b.addEventListener('click',()=>selectCat(cat,b));
+    wrap.appendChild(b);
+  });
+}
+function selectCat(cat,btn){
+  dressCat=cat;
+  document.querySelectorAll('.cat-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderItemGrid();
+}
+function renderItemGrid(){
+  const grid=document.getElementById('item-grid');grid.innerHTML='';
+  const o=getOutfit(dressingAnimalId);
+  const none=document.createElement('div');
+  none.className='item-cell unequip'+(o[dressCat]===null?' equipped':'');
+  none.innerHTML='<span>없음</span>';
+  none.addEventListener('touchstart',e=>{e.preventDefault();equipItem(null);},{passive:false});
+  none.addEventListener('click',()=>equipItem(null));
+  grid.appendChild(none);
+  ITEMS.filter(i=>i.cat===dressCat).forEach(item=>{
+    const cell=document.createElement('div');
+    cell.className='item-cell'+(o[dressCat]===item.id?' equipped':'')+(ownedItems.has(item.id)?'':' locked');
+    cell.innerHTML=`<span>${item.emoji}</span><span class="iname">${item.name}</span>`;
+    if(ownedItems.has(item.id)){
+      cell.addEventListener('touchstart',e=>{e.preventDefault();equipItem(item.id);},{passive:false});
+      cell.addEventListener('click',()=>equipItem(item.id));
+    }
+    grid.appendChild(cell);
+  });
+}
+function equipItem(id){
+  getOutfit(dressingAnimalId)[dressCat]=id;
+  renderDressStage();renderItemGrid();saveAll();
+}
+
+// ══ SHOP ══
+function showShopFromTree(){renderShop();document.getElementById('shop-screen').classList.remove('hidden');}
+function hideShop(){document.getElementById('shop-screen').classList.add('hidden');}
+function renderShop(){
+  document.getElementById('shop-shard-num').textContent=shards;
+  const grid=document.getElementById('shop-grid');grid.innerHTML='';
+  [...ANIMALS.map(a=>({...a,kind:'animal'})),...ITEMS.map(i=>({...i,kind:'item'}))].forEach(entry=>{
+    const owned=entry.kind==='animal'?ownedAnimals.has(entry.id):ownedItems.has(entry.id);
+    const cell=document.createElement('div');cell.className='shop-cell'+(owned?' owned':'');
+    cell.innerHTML=`<div class="semoji">${entry.emoji}</div><div class="sname">${entry.name}</div><div class="sprice">${owned?'보유':'✨ 10개'}</div>`;
+    if(!owned){
+      cell.addEventListener('touchstart',e=>{e.preventDefault();buyItem(entry);},{passive:false});
+      cell.addEventListener('click',()=>buyItem(entry));
+    }
+    grid.appendChild(cell);
+  });
+}
+function buyItem(entry){
+  if(shards<10){alert('별조각이 부족해요!\n필요: 10개 / 보유: '+shards+'개');return;}
+  shards-=10;
+  if(entry.kind==='animal')ownedAnimals.add(entry.id);else ownedItems.add(entry.id);
+  saveAll();renderShop();document.getElementById('shard-num').textContent=shards;playReward();
+}
+
+// ══ HOME UTILS ══
+function updateHomeAnimal(){
+  const el=document.getElementById('home-active-animal');
+  if(el)el.textContent=animalEmoji(activeAnimalId)+getWornEmojis(activeAnimalId);
+}
+function goTreeFromHome(){
+  document.getElementById('start-screen').classList.add('hidden');
+  treeReturnAction='home';
+  document.getElementById('btn-continue-game').classList.add('hidden');
+  showTree();
+}
+
+// ══ ALPHA SCREEN ══
+function showAlphaScreen(from){
+  if(from==='tree')document.getElementById('tree-screen').classList.add('hidden');
+  if(from==='home')document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('alpha-back-btn').onclick=()=>{
+    document.getElementById('alpha-screen').classList.add('hidden');
+    if(from==='tree')document.getElementById('tree-screen').classList.remove('hidden');
+    if(from==='home')document.getElementById('start-screen').classList.remove('hidden');
+  };
+  buildAlphaGrid();
+  document.getElementById('alpha-screen').classList.remove('hidden');
+}
+function buildAlphaGrid(){
+  const grid=document.getElementById('alphabet-grid');grid.innerHTML='';
+  for(let i=0;i<26;i++){
+    const ch=String.fromCharCode(65+i);
+    const cell=document.createElement('div');
+    cell.className='alpha-cell'+(collected.has(ch)?' collected':'');
+    cell.textContent=ch;grid.appendChild(cell);
+  }
+}
+
+// ══ LV2 ══
+function initLv2(){
+  const allLetters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  lv2Letters=shuffle(allLetters).slice(0,10);
+  lv2LetterIdx=0;
+  document.getElementById('lv2-screen').classList.remove('hidden');
+  document.getElementById('lv2-star-count').textContent='⭐ '+displayStars;
+  lv2StartLetter();
+}
+function lv2StartLetter(){
+  lv2Phase=1;
+  lv2PlayCounts=[0,0,0,0];
+  lv2CardTapped=[false,false,false,false];
+  lv2AllTapped=false;
+  document.getElementById('lv2-progress').textContent=(lv2LetterIdx+1)+' / 10';
+  const letter=lv2Letters[lv2LetterIdx];
+  document.getElementById('lv2-letter-title').textContent=letter;
+  document.getElementById('lv2-letter-title2').textContent=letter;
+  document.getElementById('lv2-phase1').classList.remove('hidden');
+  document.getElementById('lv2-phase2').classList.add('hidden');
+  document.getElementById('lv2-btn-next').classList.add('hidden');
+  setTimeout(()=>speak(letter),300);
+  lv2RenderPhase1Cards();
+}
+function lv2RenderPhase1Cards(){
+  const letter=lv2Letters[lv2LetterIdx];
+  const words=LV2_LETTER_WORDS[letter];
+  const container=document.getElementById('lv2-word-cards');
+  container.innerHTML='';
+  words.forEach((w,i)=>{
+    const card=document.createElement('div');
+    card.className='lv2-word-card';
+    const emojiEl=document.createElement('span');emojiEl.className='wc-emoji';emojiEl.textContent=w.emoji;
+    const wordEl=document.createElement('span');wordEl.className='wc-word';wordEl.textContent=w.word;
+    const krEl=document.createElement('span');krEl.className='wc-kr';krEl.textContent=w.kr;krEl.style.visibility='hidden';
+    const dotsRow=document.createElement('div');dotsRow.className='wc-dots';
+    dotsRow.appendChild(Object.assign(document.createElement('span'),{className:'wc-dot'}));
+    dotsRow.appendChild(Object.assign(document.createElement('span'),{className:'wc-dot'}));
+    card.appendChild(emojiEl);card.appendChild(wordEl);card.appendChild(krEl);card.appendChild(dotsRow);
+    card.addEventListener('touchstart',e=>{e.preventDefault();lv2TapWordCard(i);},{passive:false});
+    card.addEventListener('click',()=>lv2TapWordCard(i));
+    container.appendChild(card);
+  });
+}
+function lv2TapWordCard(idx){
+  const letter=lv2Letters[lv2LetterIdx];
+  speak(LV2_LETTER_WORDS[letter][idx].word);
+  const card=document.querySelectorAll('#lv2-word-cards .lv2-word-card')[idx];
+  card.classList.add('tapped');
+  card.querySelector('.wc-kr').style.visibility='visible';
+  if(lv2PlayCounts[idx]<2){
+    lv2PlayCounts[idx]++;
+    const dots=card.querySelectorAll('.wc-dot');
+    dots[lv2PlayCounts[idx]-1].classList.add('filled');
+  }
+  lv2CardTapped[idx]=true;
+  if(lv2CardTapped.every(v=>v)){
+    lv2AllTapped=true;
+    document.getElementById('lv2-btn-next').classList.remove('hidden');
+  }
+}
+function lv2StartPhase2(){
+  document.getElementById('lv2-phase1').classList.add('hidden');
+  document.getElementById('lv2-phase2').classList.remove('hidden');
+  lv2Phase=2;lv2Selected=null;lv2Matched=new Set();lv2Locked=false;
+  lv2RenderMatchGrid();
+}
+function lv2RenderMatchGrid(){
+  const letter=lv2Letters[lv2LetterIdx];
+  const words=LV2_LETTER_WORDS[letter];
+  const grid=document.getElementById('lv2-match-grid');
+  grid.innerHTML='';
+  const items=[];
+  words.forEach((w,i)=>{
+    items.push({type:'pic',idx:i,display:w.emoji});
+    items.push({type:'word',idx:i,display:w.word});
+  });
+  shuffle(items).forEach(item=>{
+    const card=document.createElement('div');
+    card.className='lv2-match-card';
+    card.dataset.type=item.type;card.dataset.idx=item.idx;
+    card.textContent=item.display;
+    if(item.type==='word')card.style.fontSize='1rem';
+    card.addEventListener('touchstart',e=>{e.preventDefault();lv2SelectCard(card,item);},{passive:false});
+    card.addEventListener('click',()=>lv2SelectCard(card,item));
+    grid.appendChild(card);
+  });
+}
+function lv2SelectCard(cardEl,item){
+  if(lv2Locked||cardEl.classList.contains('matched'))return;
+  if(!lv2Selected){
+    lv2Selected={el:cardEl,item};cardEl.classList.add('selected');return;
+  }
+  if(lv2Selected.el===cardEl){cardEl.classList.remove('selected');lv2Selected=null;return;}
+  const prev=lv2Selected;lv2Selected=null;
+  if(prev.item.idx===item.idx&&prev.item.type!==item.type){
+    prev.el.classList.remove('selected');prev.el.classList.add('matched');cardEl.classList.add('matched');
+    playCorrect();lv2Matched.add(item.idx);
+    if(lv2Matched.size===4){lv2Locked=true;setTimeout(lv2ShowWellDone,600);}
+  }else{
+    lv2Locked=true;
+    prev.el.classList.remove('selected');prev.el.classList.add('wrong');cardEl.classList.add('wrong');
+    playWrong();
+    setTimeout(()=>{prev.el.classList.remove('wrong');cardEl.classList.remove('wrong');lv2Locked=false;},600);
+  }
+}
+function lv2ShowWellDone(){
+  displayStars++;
+  document.getElementById('stars').textContent=displayStars;
+  document.getElementById('lv2-star-count').textContent='⭐ '+displayStars;
+  starMod++;if(starMod>=10){starMod=0;pendingFruits++;}
+  saveAll();
+  const btn=document.getElementById('lv2-modal-btn');
+  if(lv2LetterIdx<9){
+    document.getElementById('lv2-modal-emoji').textContent='🎉';
+    document.getElementById('lv2-modal-text').textContent='잘했어요! 다음 글자로!';
+    btn.textContent='다음 →';btn.onclick=lv2NextLetter;
+  }else{
+    document.getElementById('lv2-modal-emoji').textContent='🏆';
+    document.getElementById('lv2-modal-text').textContent='모두 완료! 대단해요!';
+    btn.textContent='완료 🎉';btn.onclick=lv2Finish;
+  }
+  document.getElementById('lv2-modal').classList.remove('hidden');
+}
+function lv2NextLetter(){
+  document.getElementById('lv2-modal').classList.add('hidden');
+  lv2LetterIdx++;lv2StartLetter();
+}
+function lv2Finish(){
+  document.getElementById('lv2-modal').classList.add('hidden');
+  document.getElementById('lv2-screen').classList.add('hidden');
+  showLevelComplete();
+}
+function lv2GoTree(){
+  treeReturnAction='lv2';
+  document.getElementById('btn-continue-game').classList.remove('hidden');
+  showTree();
+}
+function lv2GoHome(){
+  document.getElementById('lv2-screen').classList.add('hidden');
+  goHome();
+}
+</script>
+</body>
+</html>
