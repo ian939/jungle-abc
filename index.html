@@ -779,7 +779,7 @@ function renderQuestion(){
     shuffle(item.choices).forEach(ch=>ca.appendChild(makeCard(ch,'',ch===item.q)));
   }
   canAnswer=true;
-  setTimeout(()=>playHint(),300);
+  setTimeout(()=>playHint(),2000);
 }
 
 function makeCard(letter,sub,isCorrect){
@@ -840,7 +840,7 @@ function playHint(){
 }
 
 // ══ LV1 단어 듣기 팝업 (정답 후 4개 단어 한 번씩 듣기) ══
-let lv1WordTapped=[], lv1AutoClosing=false;
+let lv1WordTapped=[], lv1AutoClosing=false, lv1WordHolding=false;
 function showLv1WordModal(letter){
   const words=LV2_LETTER_WORDS[letter]||[];
   if(!words.length){lv1CloseWordModal();return;}  // 단어 없으면 바로 다음
@@ -849,6 +849,7 @@ function showLv1WordModal(letter){
   container.innerHTML='';
   lv1WordTapped=words.map(()=>false);
   lv1AutoClosing=false;
+  lv1WordHolding=false;
   words.forEach((w,i)=>{
     const card=document.createElement('div');
     card.className='lv2-word-card';
@@ -866,7 +867,13 @@ function showLv1WordModal(letter){
   document.getElementById('lv1-word-modal').classList.remove('hidden');
 }
 function lv1TapWordCard(idx,cardEl,word){
-  if(lv1AutoClosing)return;  // 자동 닫힘 진행 중이면 추가 탭 무시
+  if(lv1AutoClosing)return;       // 자동 닫힘 진행 중이면 무시
+  if(lv1WordHolding)return;       // 2초 홀딩 중이면 무시 (빠른 연타 방지)
+  lv1WordHolding=true;
+  // 다른 카드들 시각적으로 비활성화
+  document.querySelectorAll('#lv1-word-cards .lv2-word-card').forEach(c=>{
+    if(c!==cardEl)c.style.opacity='0.4';
+  });
   cardEl.classList.add('tapped');
   const dot=cardEl.querySelector('.wc-dot');
   if(dot)dot.classList.add('filled');
@@ -875,20 +882,28 @@ function lv1TapWordCard(idx,cardEl,word){
   lv1WordTapped[idx]=true;
   const justCompleted=!wasAllTapped&&lv1WordTapped.every(v=>v);
   if(justCompleted){
-    // 마지막 단어 → 발음 끝난 뒤 자동으로 다음 문제로 전환
+    // 마지막 단어 → 발음 끝난 뒤 따라 말할 시간 2초 주고 자동 전환
     lv1AutoClosing=true;
-    document.getElementById('lv1-word-hint').textContent='잘했어요! ✨';
+    document.getElementById('lv1-word-hint').textContent='따라 말해봐요! 🗣️';
     speak(word.word,()=>{
-      // 발음 종료 후 300ms 여유를 두고 닫기
-      setTimeout(lv1CloseWordModal,300);
+      document.getElementById('lv1-word-hint').textContent='잘했어요! ✨';
+      setTimeout(lv1CloseWordModal,2000);
     });
   }else{
     speak(word.word);
+    // 2초 홀딩 → 다른 카드 활성화
+    setTimeout(()=>{
+      lv1WordHolding=false;
+      document.querySelectorAll('#lv1-word-cards .lv2-word-card').forEach(c=>{
+        c.style.opacity='';
+      });
+    },2000);
   }
 }
 function lv1CloseWordModal(){
   document.getElementById('lv1-word-modal').classList.add('hidden');
   lv1AutoClosing=false;
+  lv1WordHolding=false;
   curQ++;
   if(curQ>=LEVELS[curLv].items.length)showLevelComplete();
   else renderQuestion();
