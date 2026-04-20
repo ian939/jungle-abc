@@ -82,11 +82,25 @@ html,body{width:100%;height:100%;font-family:"Apple SD Gothic Neo","Noto Sans KR
 .back-btn{width:44px;height:44px;border-radius:50%;border:none;background:var(--gl);font-size:20px;cursor:pointer;flex-shrink:0;}
 .back-btn:active{transform:scale(0.92);}
 
-/* ── ALPHA COLLECTION ── */
-#alphabet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin-bottom:20px;}
-.alpha-cell{width:100%;aspect-ratio:1;border-radius:12px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;color:#aaa;position:relative;}
-.alpha-cell.collected{background:var(--yellow);color:var(--td);box-shadow:0 0 8px rgba(255,235,59,0.6);}
-.alpha-cell.collected::after{content:"⭐";position:absolute;top:-5px;right:-5px;font-size:11px;}
+/* ── WORD BOOK (도감) ── */
+#alphabet-grid{display:block;margin-bottom:20px;}
+.alpha-nav{display:flex;flex-wrap:wrap;gap:4px;padding:6px 0 8px;position:sticky;top:0;background:var(--bg);z-index:2;justify-content:center;}
+.alpha-nav-btn{width:30px;height:30px;border-radius:8px;border:none;font-weight:900;font-size:12px;cursor:pointer;flex-shrink:0;}
+.alpha-sec{margin-bottom:20px;}
+.alpha-sec-hdr{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;margin-bottom:8px;}
+.alpha-sec-hdr .big-letter{font-size:2rem;font-weight:900;line-height:1;}
+.alpha-words-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:6px;}
+.alpha-word-card{background:#fff;border-radius:12px;padding:9px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 5px rgba(0,0,0,.08);min-height:62px;position:relative;overflow:hidden;}
+.alpha-word-card.locked{background:#f0f0f0;pointer-events:none;}
+.alpha-word-card.locked .awc-body{filter:blur(4px);user-select:none;}
+.alpha-word-card.locked .awc-emoji{filter:blur(3px);}
+.alpha-word-card.locked::after{content:"🔒";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:1.1rem;opacity:0.5;}
+.awc-emoji{font-size:1.6rem;line-height:1;flex-shrink:0;}
+.awc-body{min-width:0;}
+.awc-word{font-size:0.85rem;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.awc-sub{font-size:0.72rem;color:#888;margin-top:1px;}
+.alpha-lv-tag{font-size:11px;color:#888;margin-bottom:4px;padding-left:2px;font-weight:700;}
+.alpha-word-card.lv3{border-left:3px solid var(--gm);}
 
 /* ── TREE ── */
 #tree-screen{position:fixed;inset:0;background:linear-gradient(180deg,#1a3a1a 0%,#2d5a2d 40%,#4a8a4a 100%);overflow-y:auto;z-index:200;display:flex;flex-direction:column;align-items:center;padding:14px 16px env(safe-area-inset-bottom,16px);}
@@ -355,7 +369,7 @@ html,body{width:100%;height:100%;font-family:"Apple SD Gothic Neo","Noto Sans KR
 <div id="alpha-screen" class="full-screen hidden">
   <div class="screen-header">
     <button class="back-btn" id="alpha-back-btn">←</button>
-    <h2>📖 알파벳 도감</h2>
+    <h2>📖 단어 도감</h2>
     <div style="width:44px"></div>
   </div>
   <div id="alphabet-grid"></div>
@@ -601,12 +615,14 @@ let lv2Letters=[],lv2LetterIdx=0,lv2Phase=1;
 let lv2PlayCounts=[],lv2CardTapped=[],lv2AllTapped=false;
 let lv2Selected=null,lv2Matched=new Set(),lv2Locked=false;
 let selectedStartLevel=0;
+let seenWords=new Set(); // 게임에서 경험한 단어들 (도감 잠금 해제용)
 
 // ══ PERSISTENCE ══
 function saveAll(){
   try{localStorage.setItem('jabc3',JSON.stringify({
     collected:[...collected],ownedAnimals:[...ownedAnimals],ownedItems:[...ownedItems],
-    shards,starMod,pendingFruits,outfits,activeAnimalId,displayStars
+    shards,starMod,pendingFruits,outfits,activeAnimalId,displayStars,
+    seenWords:[...seenWords]
   }));}catch(e){}
 }
 function loadAll(){
@@ -615,6 +631,7 @@ function loadAll(){
     if(d.collected)   d.collected.forEach(v=>collected.add(v));
     if(d.ownedAnimals)d.ownedAnimals.forEach(v=>ownedAnimals.add(v));
     if(d.ownedItems)  d.ownedItems.forEach(v=>ownedItems.add(v));
+    if(d.seenWords)   d.seenWords.forEach(v=>seenWords.add(v));
     shards=d.shards||0;starMod=d.starMod||0;pendingFruits=d.pendingFruits||0;
     outfits=d.outfits||{};activeAnimalId=d.activeAnimalId||'monkey';displayStars=d.displayStars||0;
   }catch(e){}
@@ -659,6 +676,7 @@ function doReset(){
   localStorage.removeItem('jabc3');
   collected=new Set();ownedAnimals=new Set(['monkey']);ownedItems=new Set();
   shards=0;starMod=0;pendingFruits=0;outfits={};activeAnimalId='monkey';displayStars=0;
+  seenWords=new Set();
   document.getElementById('reset-overlay').classList.add('hidden');
   document.getElementById('stars').textContent=0;
   updateHomeAnimal();
@@ -686,6 +704,7 @@ function renderQuestion(){
   document.getElementById('kr-hint').textContent=(type==='match'&&item.kr)?item.kr:'';
   const qm=document.getElementById('question-main');
   if(type==='blank'){
+    seenWords.add(item.word);saveAll();
     const p=item.q.split('_');
     qm.innerHTML=`<span>${p[0].toUpperCase()}</span><span class="blank"></span><span>${p[1].toUpperCase()}</span><span style="margin-left:10px;font-size:clamp(24px,7vw,42px)">${item.img}</span>`;
   }else{qm.textContent='?';}
@@ -1029,18 +1048,20 @@ function buildAlphaGrid(){
   grid.innerHTML='';
   const screen=document.getElementById('alpha-screen');
 
-  // 상단 빠른 이동 바
+  // 상단 A-Z 빠른 이동 바
   const nav=document.createElement('div');
-  nav.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px;justify-content:center;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:1;';
+  nav.className='alpha-nav';
   for(let i=0;i<26;i++){
     const ch=String.fromCharCode(65+i);
     const btn=document.createElement('button');
+    btn.className='alpha-nav-btn';
     btn.textContent=ch;
     const done=collected.has(ch);
-    btn.style.cssText=`width:32px;height:32px;border-radius:8px;border:none;font-weight:900;font-size:13px;cursor:pointer;flex-shrink:0;background:${done?'var(--yellow)':'var(--gl)'};color:${done?'var(--td)':'#999'};`;
+    btn.style.background=done?'var(--yellow)':'var(--gl)';
+    btn.style.color=done?'var(--td)':'#999';
     btn.addEventListener('click',()=>{
       const sec=document.getElementById('alpha-sec-'+ch);
-      if(sec)screen.scrollTop=sec.offsetTop-48;
+      if(sec)screen.scrollTop=sec.offsetTop-52;
     });
     nav.appendChild(btn);
   }
@@ -1050,47 +1071,65 @@ function buildAlphaGrid(){
   for(let i=0;i<26;i++){
     const ch=String.fromCharCode(65+i);
     const done=collected.has(ch);
+    const lv2w=LV2_LETTER_WORDS[ch]||[];
+    const lv3w=BLANK_ALL.filter(b=>b.word[0].toUpperCase()===ch);
+    // 단어가 하나도 없으면 섹션 생략
+    if(!lv2w.length&&!lv3w.length)continue;
+
     const sec=document.createElement('div');
+    sec.className='alpha-sec';
     sec.id='alpha-sec-'+ch;
-    sec.style.cssText='margin-bottom:22px;';
 
     // 글자 헤더
     const hdr=document.createElement('div');
-    hdr.style.cssText=`display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;background:${done?'var(--yellow)':'var(--gl)'};margin-bottom:8px;`;
-    hdr.innerHTML=`<span style="font-size:2rem;font-weight:900;color:var(--td);line-height:1;">${ch}</span>${done?'<span style="font-size:1rem;">⭐</span>':''}`;
+    hdr.className='alpha-sec-hdr';
+    hdr.style.background=done?'var(--yellow)':'var(--gl)';
+    const seenCount=[...lv2w.map(w=>seenWords.has(w.word)),...lv3w.map(b=>seenWords.has(b.word))].filter(Boolean).length;
+    const totalCount=lv2w.length+lv3w.length;
+    hdr.innerHTML=`<span class="big-letter" style="color:var(--td);">${ch}</span>`
+      +(done?'<span style="font-size:1rem;">⭐</span>':'')
+      +`<span style="margin-left:auto;font-size:0.78rem;color:#666;font-weight:600;">${seenCount}/${totalCount} 발견</span>`;
     sec.appendChild(hdr);
 
     // Lv2 단어
-    const lv2w=LV2_LETTER_WORDS[ch];
-    if(lv2w){
+    if(lv2w.length){
       const tag=document.createElement('div');
-      tag.style.cssText='font-size:11px;color:#888;margin-bottom:4px;padding-left:2px;font-weight:700;';
+      tag.className='alpha-lv-tag';
       tag.textContent='Lv2 · 단어';
       sec.appendChild(tag);
       const row=document.createElement('div');
-      row.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px;';
+      row.className='alpha-words-grid';
       lv2w.forEach(w=>{
+        const unlocked=seenWords.has(w.word);
         const c=document.createElement('div');
-        c.style.cssText='background:#fff;border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);';
-        c.innerHTML=`<span style="font-size:1.6rem;line-height:1;">${w.emoji}</span><div style="min-width:0;"><div style="font-size:0.85rem;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${w.word}</div><div style="font-size:0.72rem;color:#888;">${w.mean} · ${w.kr}</div></div>`;
+        c.className='alpha-word-card'+(unlocked?'':' locked');
+        c.innerHTML=`<span class="awc-emoji">${w.emoji}</span>`
+          +`<div class="awc-body">`
+          +`<div class="awc-word">${w.word}</div>`
+          +`<div class="awc-sub">${w.mean} · ${w.kr}</div>`
+          +`</div>`;
         row.appendChild(c);
       });
       sec.appendChild(row);
     }
 
-    // Lv3 단어 (해당 글자로 시작하는 단어)
-    const lv3w=BLANK_ALL.filter(b=>b.word[0].toUpperCase()===ch);
+    // Lv3 단모음 단어
     if(lv3w.length){
       const tag=document.createElement('div');
-      tag.style.cssText='font-size:11px;color:#888;margin-bottom:4px;padding-left:2px;font-weight:700;';
+      tag.className='alpha-lv-tag';
       tag.textContent='Lv3 · 단모음';
       sec.appendChild(tag);
       const row=document.createElement('div');
-      row.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px;';
+      row.className='alpha-words-grid';
       lv3w.forEach(b=>{
+        const unlocked=seenWords.has(b.word);
         const c=document.createElement('div');
-        c.style.cssText='background:#fff;border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:3px solid var(--gm);';
-        c.innerHTML=`<span style="font-size:1.6rem;line-height:1;">${b.img}</span><div style="min-width:0;"><div style="font-size:0.85rem;font-weight:700;color:var(--td);">${b.word}</div><div style="font-size:0.72rem;color:#888;">${b.kr}</div></div>`;
+        c.className='alpha-word-card lv3'+(unlocked?'':' locked');
+        c.innerHTML=`<span class="awc-emoji">${b.img}</span>`
+          +`<div class="awc-body">`
+          +`<div class="awc-word">${b.word}</div>`
+          +`<div class="awc-sub">${b.kr}</div>`
+          +`</div>`;
         row.appendChild(c);
       });
       sec.appendChild(row);
@@ -1146,7 +1185,9 @@ function lv2RenderPhase1Cards(){
 }
 function lv2TapWordCard(idx){
   const letter=lv2Letters[lv2LetterIdx];
-  speak(LV2_LETTER_WORDS[letter][idx].word);
+  const w=LV2_LETTER_WORDS[letter][idx];
+  speak(w.word);
+  seenWords.add(w.word);saveAll();
   const card=document.querySelectorAll('#lv2-word-cards .lv2-word-card')[idx];
   card.classList.add('tapped');
   card.querySelector('.wc-kr').style.visibility='visible';
